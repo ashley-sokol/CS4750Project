@@ -1,4 +1,3 @@
-
 CREATE DATABASE DatabaseProject;
 
 USE DatabaseProject;
@@ -94,7 +93,7 @@ CREATE TABLE Award (
 CREATE TABLE Season (
     season_id INT PRIMARY KEY,
     show_id INT NOT NULL,
-    label VARCHAR(100) NOT NULL,
+    [label] VARCHAR(100) NOT NULL,
     release_date DATE,
     FOREIGN KEY (show_id) REFERENCES Show(show_id) ON DELETE CASCADE
 );

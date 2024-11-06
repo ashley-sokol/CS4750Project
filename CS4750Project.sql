@@ -824,3 +824,59 @@ JOIN Episode e ON s.show_id = e.show_id
 GROUP BY s.title
 ORDER BY Total_Duration_Minutes DESC;
 
+-- P4.2 
+--Function To get the average movie rating  for a specific movie. Will be used when when looking at a page for a specific movie where all of it's data will be aggregated
+CREATE FUNCTION GetMovieRating (@MovieID INT)
+RETURNS DECIMAL(3,2)
+AS
+BEGIN
+    DECLARE @ret DECIMAL(3,2)
+    SELECT @ret = AVG(CAST(rating_value AS DECIMAL(3,2)))
+    FROM Rating
+    WHERE movie_id = @MovieID;
+    RETURN @ret;
+END;
+
+--This function calculates and returns the average rating for a specified movie, based on all submitted reviews. Can be made for shows as well. It is used when users want to find specific information about a movie they are watching or are interested in watching
+CREATE FUNCTION GetReview(@MovieID INT, @ReviewSearch VARCHAR(MAX))
+RETURNS TABLE
+AS
+RETURN (
+    SELECT *
+    FROM Review
+    WHERE movie_id = @MovieID
+    AND review_text LIKE '%' + @ReviewSearch + '%'
+)
+-- Function to Find total number of Reviews for a movie. Can be used to sort movies by popularity. 
+
+CREATE FUNCTION GetTotalReviews(
+    @movie_id INT
+RETURNS INT
+AS
+BEGIN
+    DECLARE @total_reviews INT;
+    SELECT @total_reviews = COUNT(*)
+    FROM Review
+    WHERE movie_id = @movie_id;
+    RETURN @total_reviews;
+END;
+
+-- p4.3 
+-- Creates a combined view where a user has rated and reviewed a movie 
+CREATE VIEW ReviewRating AS
+SELECT r.user_id, r.rating_value,m.review_text
+FROM Rating r 
+JOIN Review m ON r.user_id = m.user_id AND r.movie_id = m.movie_id
+
+--Creates a combined Movies with their Genres
+CREATE VIEW MovieGenre AS
+SELECT m.title, g.name,g.description
+FROM Movie m JOIN Genre g ON m.movie_id = g.genre_id
+
+--All movies that have recived a reward
+CREATE VIEW AllMovieAwards AS
+SELECT a.name, m.title
+FROM Award a
+LEFT JOIN Movie_Award ma ON a.award_id = ma.award_id
+LEFT JOIN Movie m ON ma.movie_id = m.movie_id;
+

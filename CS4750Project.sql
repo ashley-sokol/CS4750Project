@@ -745,12 +745,6 @@ INSERT INTO Watchlist_Shows (watchlist_id, show_id, date_added) VALUES
 (10, 30, '2024-05-25');
 
 
-
-
-
--- P3 Below:
-
-
 -- 1. Count of Movies per Genre
 SELECT g.name AS Genre_Name, COUNT(m.movie_id) AS Total_Movies
 FROM Genre g
@@ -788,6 +782,8 @@ JOIN Rating r ON s.show_id = r.show_id
 GROUP BY g.name
 HAVING COUNT(r.rating_id) > 0
 ORDER BY Average_Rating DESC;
+
+
 
 -- 6. List of Actors and the Number of Movies They've Acted In
 SELECT a.name AS Actor_Name, COUNT(ma.movie_id) AS Movies_Acted_In
@@ -828,69 +824,8 @@ JOIN Episode e ON s.show_id = e.show_id
 GROUP BY s.title
 ORDER BY Total_Duration_Minutes DESC;
 
-
-
-
-
--- P4 Below:
-
--- P4.1
--- three stored procedures and emphasize how or why they would be used
-
--- 1. A procedure to quickly add a user to our database without typing the entire SQL command.
-CREATE PROCEDURE addUser
-    @userID INT,
-    @email VARCHAR(255),
-    @password VARCHAR(255)
-AS
-BEGIN
-    SET NOCOUNT ON;
-   
-    INSERT INTO [User] (user_id, email, [password])
-    VALUES (@userID, @email, @password);
-END;
-
--- Example execute:
-EXEC addUser @userID = 999, @email = ‘example@example.com’, @password = ‘StrongPassword!’;
-
--- 2. A procedure to quickly add a review from a user for a movie/show.
-CREATE PROCEDURE addReview
-    @reviewID INT,
-    @userID INT,
-    @movieID INT = NULL,
-    @showID INT = NULL,
-    @reviewText TEXT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    INSERT INTO Review (review_id, user_id, movie_id, show_id, review_text)
-    VALUES (@reviewID, @userID, @movieID, @showID, @reviewText);
-END;
-
--- Example execute:
-EXEC addReview @reviewID = 999, @userID = 1, @movieID = 10, @reviewText = 'Amazing movie! Loved the storyline.';
-
--- 3. A procedure to quickly add a rating from a user for a movie/show.
-CREATE PROCEDURE addRating
-    @ratingID INT,
-    @userID INT,
-    @movieID INT = NULL,
-    @showID INT = NULL,
-    @rating INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    INSERT INTO Rating (rating_id, user_id, movie_id, show_id, rating_value)
-    VALUES (@ratingID, @userID, @movieID, @showID, @rating);
-END;
-
--- Example execute:
-EXEC addRating @ratingID = 999, @userID = 2, @movieID = 10, @rating = 4;
-
 -- P4.2 
---Function to get the average movie rating for a specific movie. Will be used when looking at a page for a specific movie where all of its data will be aggregated
+--Function To get the average movie rating  for a specific movie. Will be used when when looking at a page for a specific movie where all of it's data will be aggregated
 CREATE FUNCTION GetMovieRating (@MovieID INT)
 RETURNS DECIMAL(3,2)
 AS
@@ -902,7 +837,6 @@ BEGIN
     RETURN @ret;
 END;
 
-
 --This function calculates and returns the average rating for a specified movie, based on all submitted reviews. Can be made for shows as well. It is used when users want to find specific information about a movie they are watching or are interested in watching
 CREATE FUNCTION GetReview(@MovieID INT, @ReviewSearch VARCHAR(MAX))
 RETURNS TABLE
@@ -913,12 +847,10 @@ RETURN (
     WHERE movie_id = @MovieID
     AND review_text LIKE '%' + @ReviewSearch + '%'
 )
-END;
-
 -- Function to Find total number of Reviews for a movie. Can be used to sort movies by popularity. 
+
 CREATE FUNCTION GetTotalReviews(
     @movie_id INT
-)
 RETURNS INT
 AS
 BEGIN
@@ -928,7 +860,6 @@ BEGIN
     WHERE movie_id = @movie_id;
     RETURN @total_reviews;
 END;
-
 
 -- p4.3 
 -- Creates a combined view where a user has rated and reviewed a movie 
@@ -949,4 +880,84 @@ FROM Award a
 LEFT JOIN Movie_Award ma ON a.award_id = ma.award_id
 LEFT JOIN Movie m ON ma.movie_id = m.movie_id;
 
+-- p4.4
+CREATE TRIGGER trg_PreventWatchlistDuplicateMovie
+ON Watchlist_Movies
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    DECLARE @WatchlistID INT, @MovieID INT;
+    SELECT @WatchlistID = watchlist_id, @MovieID = movie_id
+    FROM inserted;
+IF EXISTS (
+        SELECT 1
+        FROM Watchlist_Movies
+        WHERE watchlist_id = @WatchlistID
+          AND movie_id = @MovieID
+    )
+    BEGIN
+        RAISERROR('The movie is already in the watchlist.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END
+END;
+
+-- p4.5
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'StrongEncryptionPassword123!';
+
+CREATE CERTIFICATE UserPasswordCert
+WITH SUBJECT = 'Certificate for User Password Encryption';
+
+CREATE SYMMETRIC KEY UserPasswordKey
+WITH ALGORITHM = AES_256
+ENCRYPTION BY CERTIFICATE UserPasswordCert;
+
+ALTER TABLE [User]
+ADD encrypted_password VARBINARY(128);
+
+OPEN SYMMETRIC KEY UserPasswordKey DECRYPTION BY CERTIFICATE UserPasswordCert;
+
+INSERT INTO [User] (user_id, email, encrypted_password) 
+VALUES
+(1, 'alice.smith@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Alice2023!')),
+(2, 'bob.johnson@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Bob@12345')),
+(3, 'carol.brown@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Carol!Brown1')),
+(4, 'dave.wilson@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Dave&Wilson2')),
+(5, 'eve.davis@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Eve#Davis3')),
+(6, 'frank.miller@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'FrankMiller4!')),
+(7, 'grace.moore@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Grace@Moore5')),
+(8, 'henry.taylor@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Henry6!Taylor')),
+(9, 'ivy.jackson@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Ivy^Jackson7')),
+(10, 'jack.white@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Jack8White!')),
+(11, 'karen.harris@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'KarenH@9')),
+(12, 'luke.martin@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Luke10*Martin')),
+(13, 'mia.thomas@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Mia#Thomas11')),
+(14, 'nate.clark@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Nate12&Clark')),
+(15, 'olivia.robinson@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Olivia13!Robinson')),
+(16, 'paul.wright@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Paul14^Wright')),
+(17, 'quinn.lewis@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Quinn15!Lewis')),
+(18, 'rose.walker@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Rose16@Walker')),
+(19, 'sam.hall@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Sam17*Hall')),
+(20, 'tina.allen@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Tina@18Allen')),
+(21, 'ursula.king@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Ursula19!King')),
+(22, 'victor.young@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Victor20^Young')),
+(23, 'wendy.scott@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Wendy21&Scott')),
+(24, 'xander.adams@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Xander22!Adams')),
+(25, 'yara.baker@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Yara23*Baker')),
+(26, 'zach.mitchell@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Zach24@Mitchell')),
+(27, 'alice.kim@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Alice25#Kim')),
+(28, 'benjamin.perez@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Ben26^Perez')),
+(29, 'clara.carter@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Clara27!Carter')),
+(30, 'daniel.phillips@example.com', EncryptByKey(Key_GUID('UserPasswordKey'), 'Daniel28&Phillips'));
+
+CLOSE SYMMETRIC KEY UserPasswordKey;
+_______________________________________________________________________________
+OPEN SYMMETRIC KEY UserPasswordKey DECRYPTION BY CERTIFICATE UserPasswordCert;
+
+SELECT user_id, email, 
+       CONVERT(VARCHAR(100), DecryptByKey(encrypted_password)) AS decrypted_password
+FROM [User];
+
+CLOSE SYMMETRIC KEY UserPasswordKey;
+________________________________________________________________________________
+SELECT user_id, encrypted_password FROM [User];
 

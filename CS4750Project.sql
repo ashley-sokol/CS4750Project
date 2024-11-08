@@ -745,6 +745,11 @@ INSERT INTO Watchlist_Shows (watchlist_id, show_id, date_added) VALUES
 (10, 30, '2024-05-25');
 
 
+
+-- P3 Below:
+
+
+
 -- 1. Count of Movies per Genre
 SELECT g.name AS Genre_Name, COUNT(m.movie_id) AS Total_Movies
 FROM Genre g
@@ -782,8 +787,6 @@ JOIN Rating r ON s.show_id = r.show_id
 GROUP BY g.name
 HAVING COUNT(r.rating_id) > 0
 ORDER BY Average_Rating DESC;
-
-
 
 -- 6. List of Actors and the Number of Movies They've Acted In
 SELECT a.name AS Actor_Name, COUNT(ma.movie_id) AS Movies_Acted_In
@@ -824,6 +827,69 @@ JOIN Episode e ON s.show_id = e.show_id
 GROUP BY s.title
 ORDER BY Total_Duration_Minutes DESC;
 
+
+
+
+-- P4 Below:
+
+
+
+
+-- P4.1
+-- three stored procedures and emphasize how or why they would be used
+
+-- 1. A procedure to quickly add a user to our database without typing the entire SQL command.
+CREATE PROCEDURE addUser
+    @userID INT,
+    @email VARCHAR(255),
+    @password VARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+   
+    INSERT INTO [User] (user_id, email, [password])
+    VALUES (@userID, @email, @password);
+END;
+
+-- Example execute:
+EXEC addUser @userID = 999, @email = ‘example@example.com’, @password = ‘StrongPassword!’;
+
+-- 2. A procedure to quickly add a review from a user for a movie/show.
+CREATE PROCEDURE addReview
+    @reviewID INT,
+    @userID INT,
+    @movieID INT = NULL,
+    @showID INT = NULL,
+    @reviewText TEXT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Review (review_id, user_id, movie_id, show_id, review_text)
+    VALUES (@reviewID, @userID, @movieID, @showID, @reviewText);
+END;
+
+-- Example execute:
+EXEC addReview @reviewID = 999, @userID = 1, @movieID = 10, @reviewText = 'Amazing movie! Loved the storyline.';
+
+-- 3. A procedure to quickly add a rating from a user for a movie/show.
+CREATE PROCEDURE addRating
+    @ratingID INT,
+    @userID INT,
+    @movieID INT = NULL,
+    @showID INT = NULL,
+    @rating INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Rating (rating_id, user_id, movie_id, show_id, rating_value)
+    VALUES (@ratingID, @userID, @movieID, @showID, @rating);
+END;
+
+-- Example execute:
+EXEC addRating @ratingID = 999, @userID = 2, @movieID = 10, @rating = 4;
+
 -- P4.2 
 --Function To get the average movie rating  for a specific movie. Will be used when when looking at a page for a specific movie where all of it's data will be aggregated
 CREATE FUNCTION GetMovieRating (@MovieID INT)
@@ -847,6 +913,7 @@ RETURN (
     WHERE movie_id = @MovieID
     AND review_text LIKE '%' + @ReviewSearch + '%'
 )
+END;
 -- Function to Find total number of Reviews for a movie. Can be used to sort movies by popularity. 
 
 CREATE FUNCTION GetTotalReviews(

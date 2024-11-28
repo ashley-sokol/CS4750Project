@@ -11,4 +11,5 @@ import java.util.List;
 public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findUserByEmail(String user_email);
     Void updateUserByUserID(long user_id);
+
 }

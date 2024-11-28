@@ -8,44 +8,85 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/ratings")
 public class RatingController {
+
     @Autowired
     private RatingRepository ratingRepository;
-
-    @GetMapping
-    public ResponseEntity<List<Rating>> getAllRatings() {
-        return new ResponseEntity<>(ratingRepository.findAll(), HttpStatus.OK);
-    }
-
     @PostMapping
     public ResponseEntity<Rating> createRating(@RequestBody Rating rating) {
-        return new ResponseEntity<>(ratingRepository.save(rating), HttpStatus.CREATED);
+        // Check if the user has already rated the movie
+        Rating existingRating = ratingRepository.findByUserIdAndMovieId(rating.getUserId(), rating.getMovieId());
+        if (existingRating != null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST); // Duplicate rating
+        }
+        Rating createdRating = ratingRepository.save(rating);
+        return new ResponseEntity<>(createdRating, HttpStatus.CREATED);
     }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Rating> getRatingById(@PathVariable int id) {
-        return ratingRepository.findById(id)
-                .map(rating -> new ResponseEntity<>(rating, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Rating> updateRating(@PathVariable int id, @RequestBody Rating updatedRating) {
-        return ratingRepository.findById(id).map(existingRating -> {
-            existingRating.setRatingValue(updatedRating.getRatingValue());
-            return new ResponseEntity<>(ratingRepository.save(existingRating), HttpStatus.OK);
-        }).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRating(@PathVariable int id) {
-        if (ratingRepository.existsById(id)) {
-            ratingRepository.deleteById(id);
+    @GetMapping
+    public ResponseEntity<List<Rating>> getAllRatings() {
+        List<Rating> ratings = ratingRepository.findAll();
+        if (ratings.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(ratings, HttpStatus.OK);
+    }
+    @GetMapping("/movie/{movieId}")
+    public ResponseEntity<List<Rating>> getRatingsByMovie(@PathVariable("movieId") int movieId) {
+        List<Rating> ratings = ratingRepository.findByMovieId(movieId);
+        if (ratings.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(ratings, HttpStatus.OK);
+    }
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Rating>> getRatingsByUser(@PathVariable("userId") long userId) {
+        List<Rating> ratings = ratingRepository.findByUserId(userId);
+        if (ratings.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(ratings, HttpStatus.OK);
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<Rating> getRatingById(@PathVariable("id") int id) {
+        Optional<Rating> rating = ratingRepository.findById(id);
+        return rating.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<Rating> updateRating(@PathVariable("id") int id, @RequestBody Rating updatedRating) {
+        Optional<Rating> existingRatingOpt = ratingRepository.findById(id);
+        if (existingRatingOpt.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        Rating existingRating = existingRatingOpt.get();
+        existingRating.setRating(updatedRating.getRating());
+        Rating savedRating = ratingRepository.save(existingRating);
+        return new ResponseEntity<>(savedRating, HttpStatus.OK);
+    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<HttpStatus> deleteRating(@PathVariable("id") int id) {
+        try {
+            if (ratingRepository.existsById(id)) {
+                ratingRepository.deleteById(id);
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @GetMapping("/movie/{movieId}/average")
+    public ResponseEntity<Double> getAverageRating(@PathVariable("movieId") int movieId) {
+        Double averageRating = ratingRepository.findAverageRatingByMovieId(movieId);
+        if (averageRating == null) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(averageRating, HttpStatus.OK);
     }
 }

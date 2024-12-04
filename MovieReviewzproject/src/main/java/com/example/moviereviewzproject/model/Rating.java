@@ -19,10 +19,6 @@ public class Rating {
     @JoinColumn(name = "movie_id")
     private Movie movie;
 
-    @ManyToOne
-    @JoinColumn(name = "show_id")
-    private Show show;
-
     @Column(name = "rating_value", nullable = false)
     private int ratingValue;
 
@@ -52,14 +48,6 @@ public class Rating {
 
     public void setMovie(Movie movie) {
         this.movie = movie;
-    }
-
-    public Show getShow() {
-        return show;
-    }
-
-    public void setShow(Show show) {
-        this.show = show;
     }
 
     public int getRatingValue() {

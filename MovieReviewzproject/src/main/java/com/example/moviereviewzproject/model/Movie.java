@@ -14,10 +14,6 @@ public class Movie {
     @JoinColumn(name = "genre_id", nullable = false)
     private Genre genre;
 
-    @ManyToOne
-    @JoinColumn(name = "director_id", nullable = false)
-    private Director director;
-
     @Column(name = "title", nullable = false)
     private String title;
 
@@ -47,14 +43,6 @@ public class Movie {
 
     public void setGenre(Genre genre) {
         this.genre = genre;
-    }
-
-    public Director getDirector() {
-        return director;
-    }
-
-    public void setDirector(Director director) {
-        this.director = director;
     }
 
     public String getTitle() {

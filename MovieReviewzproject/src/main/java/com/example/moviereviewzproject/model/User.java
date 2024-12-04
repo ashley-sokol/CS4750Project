@@ -30,7 +30,10 @@ public class User {
     public long getUserID(){
         return this.user_id;
     }
-    public String getUserEmail(){
+    public String getPassword(){
+        return this.password;
+    }
+    public String getEmail(){
         return this.email;
     }
     public long getUserWatchlistId(){

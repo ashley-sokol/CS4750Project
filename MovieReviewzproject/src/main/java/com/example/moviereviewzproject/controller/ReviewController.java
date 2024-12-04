@@ -54,8 +54,7 @@ public class ReviewController {
     public ResponseEntity<Review> updateReview(@PathVariable("id") int id, @RequestBody Review updatedReview) {
         return reviewRepository.findById(id)
                 .map(existingReview -> {
-                    existingReview.setText(updatedReview.getText());
-                    existingReview.setRating(updatedReview.getRating());
+                    existingReview.setReviewText(updatedReview.getReviewText());
                     Review savedReview = reviewRepository.save(existingReview);
                     return new ResponseEntity<>(savedReview, HttpStatus.OK);
                 })

@@ -50,7 +50,6 @@ public class MovieController {
         existingMovie.setTitle(updatedMovie.getTitle());
         existingMovie.setDescription(updatedMovie.getDescription());
         existingMovie.setReleaseDate(updatedMovie.getReleaseDate());
-        existingMovie.setRating(updatedMovie.getRating());
         existingMovie.setMaturityRating(updatedMovie.getMaturityRating());
         Movie savedMovie = movieRepository.save(existingMovie);
         return new ResponseEntity<>(savedMovie, HttpStatus.OK);

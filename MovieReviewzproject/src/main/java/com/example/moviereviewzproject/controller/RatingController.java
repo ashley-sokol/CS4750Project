@@ -19,9 +19,9 @@ public class RatingController {
     @PostMapping
     public ResponseEntity<Rating> createRating(@RequestBody Rating rating) {
         // Check if the user has already rated the movie
-        Rating existingRating = ratingRepository.findByUserIdAndMovieId(rating.getUserId(), rating.getMovieId());
+        Rating existingRating = ratingRepository.findByUserIdAndMovieId(rating.getUser().getUserID(), rating.getMovie().getMovieId());
         if (existingRating != null) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST); // Duplicate rating
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         Rating createdRating = ratingRepository.save(rating);
         return new ResponseEntity<>(createdRating, HttpStatus.CREATED);
@@ -64,7 +64,7 @@ public class RatingController {
         }
 
         Rating existingRating = existingRatingOpt.get();
-        existingRating.setRating(updatedRating.getRating());
+        existingRating.setRatingValue(updatedRating.getRatingValue());
         Rating savedRating = ratingRepository.save(existingRating);
         return new ResponseEntity<>(savedRating, HttpStatus.OK);
     }

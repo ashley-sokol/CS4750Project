@@ -19,10 +19,6 @@ public class Review {
     @JoinColumn(name = "movie_id")
     private Movie movie;
 
-    @ManyToOne
-    @JoinColumn(name = "show_id")
-    private Show show;
-
     @Column(name = "review_text", nullable = false)
     private String reviewText;
 
@@ -52,14 +48,6 @@ public class Review {
 
     public void setMovie(Movie movie) {
         this.movie = movie;
-    }
-
-    public Show getShow() {
-        return show;
-    }
-
-    public void setShow(Show show) {
-        this.show = show;
     }
 
     public String getReviewText() {
